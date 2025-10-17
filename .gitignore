@@ -1,0 +1,17 @@
+# Virtual environment
+venv/
+
+# IDE settings
+.vscode/
+
+# Environment variables and secrets
+*.env
+
+
+# Cache / temporary files
+__pycache__/
+
+# Docker
+*.pid
+*.tar
+docker-compose.override.yml
