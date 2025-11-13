@@ -30,7 +30,7 @@ class Item(MethodView):
             item.price = item_data["price"]
             item.name = item_data["name"]
         else:
-            item = ItemModel(**item_data)
+            item = ItemModel(id=item_id, **item_data)
 
         db.session.add(item)
         db.session.commit()
