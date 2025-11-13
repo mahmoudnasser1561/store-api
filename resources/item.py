@@ -6,7 +6,6 @@ from schemas import ItemSchema, ItemUpdateSchema
 from models import ItemModel, StoreModel
 from db import db
 from sqlalchemy.exc import  SQLAlchemyError
-# from db import items
 
 blp = Blueprint("Items", "items", description="Operations on items")
 
@@ -20,7 +19,10 @@ class Item(MethodView):
     
     def delete(self, item_id):
         item = ItemModel.query.get_or_404(item_id)
-        raise NotImplemented("Deleting an Item is not implemented")
+        db.session.delete(item)
+        db.session.commit()
+
+        return {"Message": "Item deleted"}
 
     @blp.arguments(ItemUpdateSchema)
     @blp.response(200, ItemSchema)
