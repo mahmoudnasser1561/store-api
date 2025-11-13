@@ -1,4 +1,4 @@
 # store-api
 
 
-<img width="888" height="554" alt="Screen Shot 2025-11-13 at 22 26 17" src="https://github.com/user-attachments/assets/ce3e6d14-91e3-4d8c-b76a-59a8633f3b41" />
+<img width="1298" height="2049" alt="Screenshot 2025-11-13 at 22-30-34 Stores REST API" src="https://github.com/user-attachments/assets/bf1ea804-a96e-44f8-ae95-1eb2db90099e" />
