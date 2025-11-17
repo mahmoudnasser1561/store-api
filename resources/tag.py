@@ -71,3 +71,19 @@ class Tag(MethodView):
     def get(self, tag_id):
         tag = TagModel.query.get_or_404(tag_id)
         return tag
+
+    @blp.response(202, description="Deletes a tag if no item is tagged with it")
+    @blp.alt_responseresponse(404, description="Tag not Found")
+    @blp.alt_responseresponse(400, description="Tag is assigned to one or more item, Tag can't be deleted")
+    def delete(self, tag_id):
+        tag = TagModel.query.get_or_404(tag_id)
+        
+        if not tag.items:
+            db.session.delete(tag)
+            db.session.commit()
+            return {"message": "Tag deleted."}
+        
+        abort(
+            400,
+            message="Couldn't delete the tag. Make sure it's not associated with any items"
+        )
