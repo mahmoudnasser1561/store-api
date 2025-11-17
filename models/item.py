@@ -10,3 +10,4 @@ class ItemModel(db.Model):
 
     store = db.relationship("StoreModel", back_populates="items")
     db.relationship("items_tags", back_populates="items", secondary="items_tags")
+    tags = db.relationship("TagModel", secondary="items_tags", back_populates="items")
