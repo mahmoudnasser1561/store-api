@@ -51,7 +51,7 @@ class LinkTagsToItem(MethodView):
         return tag
     
     @blp.response(200, TagSchema)
-    def post(self, item_id, tag_id):
+    def delete(self, item_id, tag_id):
         item = ItemModel.query.get_or_404(item_id)
         tag = TagModel.query.get_or_404(tag_id)
 
