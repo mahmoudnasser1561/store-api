@@ -64,7 +64,14 @@ class LinkTagsToItem(MethodView):
             abort(500, message="An error occurred while inserting the tag.")
 
         return {"message": "Item removed from tag", "item": item, "tag": tag}
-    
+
+
+@blp.route("/tag")
+class TagList(MethodView):
+    @blp.response(200, TagSchema(many=True))
+    def get(self):
+        return TagModel.query.all()
+ 
 @blp.route("/tag/<string:tag_id>")
 class Tag(MethodView):
     @blp.response(200, TagSchema)
@@ -87,3 +94,19 @@ class Tag(MethodView):
             400,
             message="Couldn't delete the tag. Make sure it's not associated with any items"
         )
+
+    def post(self, tag_data):
+        if TagModel.query.filter(
+            TagModel.name == tag_data["tag_name"]
+        ).first():
+            abort(400, message="A tag with that name already exists in this store.")
+
+        tag = TagModel(**tag_data)
+
+        try:
+            db.session.add(tag)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            abort(500, message=str(e))
+
+        return tag
