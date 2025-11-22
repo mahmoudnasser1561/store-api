@@ -20,13 +20,6 @@ db_name = os.getenv("DB_NAME")
 db_host = os.getenv("DB_HOST")
 db_port = os.getenv("DB_PORT")
 
-def get_unassigned_store():
-    store = StoreModel.query.filter_by(name="Unassigned").first()
-    if not store:
-        store = StoreModel(name="Unassigned", id=-1)
-        db.session.add(store)
-        db.session.commit()
-    return store
 
 
 def create_app(db_url=None):
@@ -49,8 +42,7 @@ def create_app(db_url=None):
     def create_tables():
         db.create_all()
     def create_defaults():
-        get_unassigned_store()
-
+        pass
 
     api = Api(app)
 
