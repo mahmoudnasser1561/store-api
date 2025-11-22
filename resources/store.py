@@ -23,7 +23,6 @@ class Store(MethodView):
         store = StoreModel.query.get_or_404(store_id)
 
         UNASSIGNED_ID = 0 
-        
         for item in list(store.items):
             item.store_id = UNASSIGNED_ID
             
@@ -33,12 +32,23 @@ class Store(MethodView):
         
         db.session.flush() 
         db.session.delete(store)
-
         db.session.commit()
 
         return {"message": "Store deleted, and associated items/tags moved to Unassigned store."}
 
+    @blp.arguments(StoreSchema)
+    @blp.response(200, StoreSchema)
+    def put(self, store_data, store_id):
+        store = StoreModel.query.get(store_id)
 
+        if store:
+            store.name = store_data.get("name", store.name)
+            db.session.commit()
+        else:
+            store = StoreModel(id=store_id, **store_data)
+            db.session.commit()
+            
+        return store
     
 @blp.route("/store")
 class StoreList(MethodView):
