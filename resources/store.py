@@ -1,4 +1,5 @@
 import uuid
+from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 # from db import stores
@@ -48,6 +49,16 @@ class StoreList(MethodView):
                 )
 
         return store
+
+
+@blp.route("/store/search")
+class StoreSearch(MethodView):
+    @blp.response(200, StoreSchema(many=True))
+    def get(self):
+        name = request.args.get("name")
+        if not name:
+            abort(400, message="Provide ?name=<term>")
+        return StoreModel.query.filter(StoreModel.name.ilike(f"%{name}%")).all()
 
 @blp.route("/store/<int:store_id>/item/<int:item_id>")
 class StoreItem(MethodView):
