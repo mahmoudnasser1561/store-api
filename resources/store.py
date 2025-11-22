@@ -2,8 +2,8 @@ import uuid
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 # from db import stores
-from schemas import StoreSchema
-from models import StoreModel
+from schemas import StoreSchema, ItemSchema
+from models import StoreModel, ItemModel
 from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -48,3 +48,25 @@ class StoreList(MethodView):
                 )
 
         return store
+
+@blp.route("/store/<int:store_id>/item/<int:item_id>")
+class StoreItem(MethodView):
+    """Unlink a specific item from a store by assigning it to 'Unassigned'."""
+
+    @blp.response(200, ItemSchema)
+    def delete(self, store_id, item_id):
+        item = ItemModel.query.get_or_404(item_id)
+
+        if item.store_id != store_id:
+            abort(404, message="Item not found under this store")
+
+        unassigned = StoreModel.query.filter_by(name="Unassigned").first()
+        if not unassigned:
+            unassigned = StoreModel(name="Unassigned")
+            db.session.add(unassigned)
+            db.session.commit()
+
+        item.store_id = unassigned.id
+        db.session.commit()
+
+        return {"message": "Item moved to Unassigned store", "item": item}
