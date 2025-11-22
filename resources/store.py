@@ -59,7 +59,14 @@ class StoreSearch(MethodView):
         if not name:
             abort(400, message="Provide ?name=<term>")
         return StoreModel.query.filter(StoreModel.name.ilike(f"%{name}%")).all()
-
+    
+@blp.route("/store/<int:store_id>/count")
+class StoreItemCount(MethodView):
+    @blp.response(200)
+    def get(self, store_id):
+        count = ItemModel.query.filter_by(store_id=store_id).count()
+        return {"store_id": store_id, "item_count": count}
+    
 @blp.route("/store/<int:store_id>/item/<int:item_id>")
 class StoreItem(MethodView):
     """Link or unlink an item to a store"""
