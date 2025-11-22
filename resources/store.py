@@ -18,14 +18,28 @@ class Store(MethodView):
     def get(cls, store_id):
         store = StoreModel.query.get_or_404(store_id)
         return store
-    
+
     def delete(self, store_id):
         store = StoreModel.query.get_or_404(store_id)
+
+        UNASSIGNED_ID = 0 
+        
+        for item in list(store.items):
+            item.store_id = UNASSIGNED_ID
+            
+        for tag in list(store.tags):
+            tag.store_id = UNASSIGNED_ID
+
+        
+        db.session.flush() 
         db.session.delete(store)
+
         db.session.commit()
 
-        return {"Message": "store deleted"}
+        return {"message": "Store deleted, and associated items/tags moved to Unassigned store."}
 
+
+    
 @blp.route("/store")
 class StoreList(MethodView):
     @blp.response(200, StoreSchema(many=True))
