@@ -51,10 +51,12 @@ class StoreList(MethodView):
 
 @blp.route("/store/<int:store_id>/item/<int:item_id>")
 class StoreItem(MethodView):
-    """Unlink a specific item from a store by assigning it to 'Unassigned'."""
+    """Link or unlink an item to a store"""
 
-    @blp.response(200, ItemSchema)
+    @blp.response(200)
     def delete(self, store_id, item_id):
+        """Unlink a specific item from a store by assigning it to 'Unassigned'."""
+        
         item = ItemModel.query.get_or_404(item_id)
 
         if item.store_id != store_id:
@@ -64,4 +66,20 @@ class StoreItem(MethodView):
         item.store_id = UNASSIGNED_ID
         db.session.commit()
 
-        return {"message": "Item moved to Unassigned store", "item": item}
+        return {"message": "Item moved to Unassigned store", "item": ItemSchema().dump(item)}
+    
+
+    @blp.response(200)
+    def put(self, store_id, item_id):
+        """link a specific item to a specific store."""
+
+        item = ItemModel.query.get_or_404(item_id)
+        store = StoreModel.query.get_or_404(store_id)
+
+        if item.store_id == store_id:
+            return {"message": "Item already assigned to this store", "item": ItemSchema().dump(item)}
+        
+        item.store_id = store_id
+        db.session.commit()
+
+        return {"message": "Item linked to store", "item": ItemSchema().dump(item)}
