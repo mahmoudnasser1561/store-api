@@ -60,13 +60,8 @@ class StoreItem(MethodView):
         if item.store_id != store_id:
             abort(404, message="Item not found under this store")
 
-        unassigned = StoreModel.query.filter_by(name="Unassigned").first()
-        if not unassigned:
-            unassigned = StoreModel(name="Unassigned")
-            db.session.add(unassigned)
-            db.session.commit()
-
-        item.store_id = unassigned.id
+        UNASSIGNED_ID = 0
+        item.store_id = UNASSIGNED_ID
         db.session.commit()
 
         return {"message": "Item moved to Unassigned store", "item": item}
