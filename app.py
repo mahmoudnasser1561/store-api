@@ -52,7 +52,7 @@ def create_app(db_url=None):
     api = Api(app)
 
     jwt = JWTManager(app)
-    app.config["JWT_SECRET_KEY"] = secrets.SystemRandom().getrandbits(128)
+    app.config["JWT_SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
 
     api.register_blueprint(ItemBlueprint)
     api.register_blueprint(StoreBlueprint)
