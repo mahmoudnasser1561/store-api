@@ -11,6 +11,8 @@ from models import StoreModel
 from db import db
 
 from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager
+import secrets
 
 load_dotenv()  
 
@@ -19,6 +21,8 @@ db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
 db_host = os.getenv("DB_HOST")
 db_port = os.getenv("DB_PORT")
+
+secret_key = os.getenv("SECRET_KEY")
 
 
 
@@ -45,6 +49,9 @@ def create_app(db_url=None):
         pass
 
     api = Api(app)
+
+    jwt = JWTManager(app)
+    app.config["JWT_SECRET_KEY"] = secrets.SystemRandom().getrandbits(128)
 
     api.register_blueprint(ItemBlueprint)
     api.register_blueprint(StoreBlueprint)
