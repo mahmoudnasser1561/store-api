@@ -1,6 +1,7 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
+from flask_jwt_extended import jwt_required
 
 from db import db
 from models import TagModel, StoreModel, ItemModel
@@ -15,6 +16,7 @@ class TagsInStore(MethodView):
         store = StoreModel.query.get_or_404(store_id)
         return store.tags.all()
     
+    jwt_required()
     @blp.arguments(TagSchema)
     @blp.response(201, TagSchema)
     def post(self, tag_data, store_id):
@@ -35,6 +37,7 @@ class TagsInStore(MethodView):
     
 @blp.route("/item/<string:item_id>/tag/<string:tag_id>")
 class LinkTagsToItem(MethodView):
+    jwt_required()
     @blp.response(201, TagSchema)
     def post(self, item_id, tag_id):
         item = ItemModel.query.get_or_404(item_id)
@@ -50,6 +53,7 @@ class LinkTagsToItem(MethodView):
 
         return tag
     
+    jwt_required()
     @blp.response(200, TagSchema)
     def delete(self, item_id, tag_id):
         item = ItemModel.query.get_or_404(item_id)
@@ -79,6 +83,7 @@ class Tag(MethodView):
         tag = TagModel.query.get_or_404(tag_id)
         return tag
 
+    jwt_required()
     @blp.response(202, description="Deletes a tag if no item is tagged with it")
     @blp.alt_response(404, description="Tag not Found")
     @blp.alt_response(400, description="Tag is assigned to one or more item, Tag can't be deleted")
@@ -95,6 +100,7 @@ class Tag(MethodView):
             message="Couldn't delete the tag. Make sure it's not associated with any items"
         )
 
+    jwt_required()
     def post(self, tag_data):
         if TagModel.query.filter(
             TagModel.name == tag_data["tag_name"]
