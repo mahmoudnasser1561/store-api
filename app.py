@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_smorest import Api
 import os 
 
@@ -42,6 +42,7 @@ def create_app(db_url=None):
     )    
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
+    app.config["JWT_SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
 
     @app.before_request
     def create_tables():
@@ -52,7 +53,26 @@ def create_app(db_url=None):
     api = Api(app)
 
     jwt = JWTManager(app)
-    app.config["JWT_SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify({"message" : "The token has expired.", "error": "token_expired"}),
+            401,
+        )
+
+    @jwt.invalid_token_loader
+    def invalid_token_loader(error):
+        return (
+            jsonify({"message" : "Signature verification failed.", "error": "invalid_token"}),
+            401,
+        )
+    
+    @jwt.unauthorized_loader
+    def unauthorized_loader(error):
+        return (
+            jsonify({"message" : "Request doesn't contain an access token", "error": "authorization_required"}),
+            401,
+        )
 
     api.register_blueprint(ItemBlueprint)
     api.register_blueprint(StoreBlueprint)
