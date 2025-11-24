@@ -2,11 +2,12 @@ import uuid
 from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-# from db import stores
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from flask_jwt_extended import jwt_required
+
 from schemas import StoreSchema, ItemSchema
 from models import StoreModel, ItemModel
 from db import db
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 
 blp = Blueprint("Stores", "stores", description="Operations on stores")
