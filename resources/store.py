@@ -19,7 +19,8 @@ class Store(MethodView):
     def get(cls, store_id):
         store = StoreModel.query.get_or_404(store_id)
         return store
-
+    
+    jwt_required()
     def delete(self, store_id):
         store = StoreModel.query.get_or_404(store_id)
 
@@ -37,6 +38,7 @@ class Store(MethodView):
 
         return {"message": "Store deleted, and associated items/tags moved to Unassigned store."}
 
+    jwt_required()
     @blp.arguments(StoreSchema)
     @blp.response(200, StoreSchema)
     def put(self, store_data, store_id):
@@ -57,6 +59,7 @@ class StoreList(MethodView):
     def get(cls):
         return StoreModel.query.all()
 
+    jwt_required()
     @blp.arguments(StoreSchema)
     @blp.response(201, StoreSchema)
     def post(cls, store_data):
@@ -96,6 +99,7 @@ class StoreItemCount(MethodView):
 class StoreItem(MethodView):
     """Link or unlink an item to a store"""
 
+    jwt_required()
     @blp.response(200)
     def delete(self, store_id, item_id):
         """Unlink a specific item from a store by assigning it to 'Unassigned'."""
@@ -111,7 +115,7 @@ class StoreItem(MethodView):
 
         return {"message": "Item moved to Unassigned store", "item": ItemSchema().dump(item)}
     
-
+    jwt_required()
     @blp.response(200)
     def put(self, store_id, item_id):
         """link a specific item to a specific store."""
