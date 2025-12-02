@@ -90,6 +90,18 @@ def create_app(db_url=None):
             jsonify({"message" : "Token has been revoked.", "error": "token_revoked"}),
             401,
         )
+    
+    @jwt.needs_fresh_token_loader
+    def token_not_fresh_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {
+                    "description": "The token is not fresh.",
+                    "error": "fresh_token_required",
+                }
+            ),
+            401
+        )
 
     api.register_blueprint(ItemBlueprint)
     api.register_blueprint(StoreBlueprint)
