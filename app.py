@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_smorest import Api
 import os 
 
+from flask_migrate import Migrate
 from resources.item import blp as ItemBlueprint
 from resources.store import blp as StoreBlueprint
 from resources.tag import blp as TagBlueprint
@@ -29,6 +30,11 @@ secret_key = os.getenv("SECRET_KEY")
 
 def create_app(db_url=None):
     app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = (
+        f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    )
+
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config["API_TITLE"] = "Stores REST API"
@@ -51,6 +57,7 @@ def create_app(db_url=None):
         pass
 
     api = Api(app)
+    migrate = Migrate(app, db)
 
     jwt = JWTManager(app)
     @jwt.additional_claims_loader
