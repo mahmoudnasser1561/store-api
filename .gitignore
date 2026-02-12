@@ -16,3 +16,5 @@ __pycache__/
 *.tar
 docker-compose.override.yml
 .env
+
+proposals

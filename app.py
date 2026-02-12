@@ -1,6 +1,11 @@
-from flask import Flask, jsonify
+import logging
+import os
+import secrets
+import time
+from uuid import uuid4
+
+from flask import Flask, g, jsonify, request
 from flask_smorest import Api
-import os 
 
 from flask_migrate import Migrate
 from resources.item import blp as ItemBlueprint
@@ -13,8 +18,10 @@ from blocklist import BLOCKLIST
 from db import db
 
 from dotenv import load_dotenv
-from flask_jwt_extended import JWTManager
-import secrets
+from flask_jwt_extended import JWTManager, get_jwt_identity
+from flask.signals import got_request_exception
+
+from logging_setup import setup_logging
 
 load_dotenv()  
 
@@ -29,6 +36,7 @@ secret_key = os.getenv("SECRET_KEY")
 
 
 def create_app(db_url=None):
+    setup_logging()
     app = Flask(__name__)
     # app.config['SQLALCHEMY_DATABASE_URI'] = (
     #     f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
@@ -56,8 +64,66 @@ def create_app(db_url=None):
     app.config["JWT_SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
 
     @app.before_request
+    def set_request_context():
+        g.request_id = request.headers.get("X-Request-ID") or str(uuid4())
+        g.request_start = time.perf_counter()
+
+    @app.before_request
     def create_tables():
         db.create_all()
+
+    @app.after_request
+    def log_request(response):
+        duration_ms = None
+        if hasattr(g, "request_start"):
+            duration_ms = round((time.perf_counter() - g.request_start) * 1000, 2)
+
+        try:
+            user_id = get_jwt_identity()
+        except Exception:
+            user_id = None
+
+        logging.getLogger("app.request").info(
+            "HTTP request completed",
+            extra={
+                "event": "http_request",
+                "request_id": getattr(g, "request_id", None),
+                "method": request.method,
+                "route": request.url_rule.rule if request.url_rule else None,
+                "path": request.path,
+                "status": response.status_code,
+                "duration_ms": duration_ms,
+                "remote_addr": request.remote_addr,
+                "user_id": user_id,
+            },
+        )
+
+        if hasattr(g, "request_id"):
+            response.headers["X-Request-ID"] = g.request_id
+        return response
+
+    def log_exception(sender, exception, **extra):
+        try:
+            user_id = get_jwt_identity()
+        except Exception:
+            user_id = None
+
+        logging.getLogger("app.request").error(
+            "Unhandled exception during request",
+            exc_info=True,
+            extra={
+                "event": "http_exception",
+                "request_id": getattr(g, "request_id", None),
+                "method": request.method if request else None,
+                "route": request.url_rule.rule if request and request.url_rule else None,
+                "path": request.path if request else None,
+                "remote_addr": request.remote_addr if request else None,
+                "user_id": user_id,
+            },
+        )
+
+    got_request_exception.connect(log_exception, app, weak=False)
+
     def create_defaults():
         pass
 

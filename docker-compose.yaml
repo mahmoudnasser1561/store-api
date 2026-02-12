@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -34,6 +34,11 @@ services:
       - .:/app  
     env_file:
       - .env
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      WERKZEUG_LOG_LEVEL: ${WERKZEUG_LOG_LEVEL:-WARNING}
+      PYTHONUNBUFFERED: "1"
     command: ["flask", "run", "--host=0.0.0.0"]  
 
 volumes:
