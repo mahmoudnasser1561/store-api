@@ -84,3 +84,93 @@ Item ↔ Tag is many-to-many (junction table)
 Mermaid ERD (conceptual):
 <br> 
 [![store_api ERD](screenshots/store_api.drawio.png)](screenshots/store_api.drawio.png)
+
+
+## Example API Flow (using Swagger)
+
+- Register → Login (get access_token, refresh_token)
+
+- Create a store (POST /store)
+
+- Create items (POST /item)
+
+- Link an item to a store (PUT /store/{store_id}/item/{item_id})
+
+- Create tags under a store (POST /store/{store_id}/tag)
+
+- Tag an item (POST /item/{item_id}/tag/{tag_id})
+
+- Swagger is the source of truth for request/response bodies.
+
+##  Main Endpoints (Highlights)
+
+#### Items
+
+- GET /item
+
+- POST /item
+
+- GET /item/{item_id}
+
+- PUT /item/{item_id}
+
+- DELETE /item/{item_id}
+
+#### Stores
+
+- GET /store
+
+- POST /store
+
+- GET /store/{store_id}
+
+- PUT /store/{store_id}
+
+- DELETE /store/{store_id}
+
+- GET /store/search
+
+- GET /store/{store_id}/count
+
+- PUT /store/{store_id}/item/{item_id} (link)
+
+- DELETE /store/{store_id}/item/{item_id} (unlink → “Unassigned” behavior)
+
+#### Tags
+
+- GET /store/{store_id}/tag
+
+- POST /store/{store_id}/tag
+
+- GET /tag
+
+- GET /tag/{tag_id}
+
+- POST /item/{item_id}/tag/{tag_id}
+
+- DELETE /item/{item_id}/tag/{tag_id}
+
+#### Users / Auth
+
+- POST /register
+
+- POST /login
+
+- POST /refresh
+
+- POST /logout
+
+- GET /user/{user_id}
+
+- DELETE /user/{user_id}
+
+## Project Structure
+.
+├── app.py               # App factory + config + blueprint registration
+├── resources/           # Flask-Smorest blueprints (routes)
+├── models/              # SQLAlchemy models
+├── schemas.py           # Request/response schemas
+├── migrations/          # Alembic migrations
+├── db/                  # Postgres init script + Dockerfile
+├── docker-compose.yaml  # Local stack
+└── Dockerfile           # API container
