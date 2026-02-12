@@ -1,6 +1,86 @@
-# store-api
+# Store API (Flask + Postgres) — Retail Backend (Amazon-like)
 
-<img width="827" height="542" alt="ERDAPI drawio" src="https://github.com/user-attachments/assets/5913da69-8be0-476e-872a-364d65ecf6da" />
+A production-style REST API for managing **Stores**, **Items**, and **Tags** — with **JWT authentication**, **schema validation**, **migrations**, and **OpenAPI/Swagger docs**.
+
+> Built as a portfolio backend project to demonstrate real-world API design, entity relationships, and containerized local development.
+
+---
+
+## Features
+
+- **Stores / Items / Tags** domain (Retail logic)
+- **Link/Unlink Items ↔ Stores**
+- **Tag Items** (many-to-many)
+- **Store search** and **store item count**
+- **JWT Authentication** (access + refresh + logout)
+- **Validation & serialization** via schemas (Flask-Smorest)
+- **Error handling** (consistent API errors)
+- **PostgreSQL** persistence
+- **Database migrations** (Alembic/Flask-Migrate)
+- **OpenAPI 3.0 + Swagger UI** generated automatically
+
+---
+
+## Tech Stack
+
+- Python 3.12 (Flask)
+- Flask-Smorest (OpenAPI + Blueprints)
+- SQLAlchemy + Flask-Migrate (Alembic)
+- PostgreSQL 16
+- Docker + Docker Compose
+
+---
+
+## Architecture
+
+- `api` service: Flask REST API (port **5000**)
+- `db` service: PostgreSQL 16 with init script + persistent volume
+
+---
+
+## API Documentation (Swagger / OpenAPI)
+
+After running the stack:
+
+- Swagger UI: `http://localhost:5000/swagger-ui`
+- OpenAPI JSON: `http://localhost:5000/openapi.json`
+
+The API is titled **“Stores REST API”** and versioned as **v1**.
 
 
-<img width="1298" height="2049" alt="Screenshot 2025-11-13 at 22-30-34 Stores REST API" src="https://github.com/user-attachments/assets/bf1ea804-a96e-44f8-ae95-1eb2db90099e" />
+## Quickstart (Docker)
+
+### 1) Configure environment
+Create a `.env` file
+
+```env
+DB_USER=flask
+DB_PASSWORD=pass
+DB_NAME=storeitem
+DB_HOST=db
+DB_PORT=5432
+```
+
+### 2) Run
+Create a `.env` file
+
+```bash
+docker compose up --build
+```
+
+### 3) Open Swagger
+
+Go to: ```http://localhost:5000/swagger-ui```
+
+
+## Domain Model (Conceptual)
+
+Store has many Items
+
+Store has many Tags
+
+Item ↔ Tag is many-to-many (junction table)
+
+Mermaid ERD (conceptual):
+<br> 
+[![store_api ERD](screenshots/store_api.drawio.png)](screenshots/store_api.drawio.png)
