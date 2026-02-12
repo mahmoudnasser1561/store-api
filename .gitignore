@@ -16,5 +16,7 @@ __pycache__/
 *.tar
 docker-compose.override.yml
 .env
+observability/alertmanager/alertmanager.yml
 
 proposals
+Issues
