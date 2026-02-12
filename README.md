@@ -62,7 +62,7 @@ DB_PORT=5432
 ```
 
 ### 2) Run
-Create a `.env` file
+Start the services:
 
 ```bash
 docker compose up --build
@@ -157,6 +157,8 @@ Observability verification:
 docker compose --profile observability ps
 curl http://localhost:9090/api/v1/targets
 curl "http://localhost:9090/api/v1/query?query=up{job=\"store-api\"}"
+curl "http://localhost:9090/api/v1/query?query=up{job=\"store-db\"}"
+curl "http://localhost:9090/api/v1/query?query=pg_up{job=\"store-db\"}"
 ```
 
 Expected:
@@ -164,6 +166,8 @@ Expected:
 - `store-prometheus` and `store-grafana` are `Up`
 - Prometheus targets API shows `store-api:5000` with `"health":"up"`
 - Query result includes `up{job="store-api"} == 1`
+- `up{job="store-db"} == 1` means postgres-exporter is reachable
+- `pg_up{job="store-db"} == 1` means PostgreSQL is reachable (this is the DB health signal)
 
 Alerting setup (email routing):
 
@@ -198,6 +202,13 @@ curl http://localhost:9090/api/v1/rules
 curl http://localhost:9090/api/v1/alerts
 curl http://localhost:9093/api/v2/status
 ```
+
+Expected alert lifecycle:
+
+- Initial state: alerts are `inactive`
+- After stopping a service: alert becomes `pending`
+- After ~1 minute (`for: 1m`): alert becomes `firing`
+- After recovery: alert returns to `inactive` (and `resolved` notification is sent if enabled)
 
 Simulate alerts:
 
@@ -326,6 +337,8 @@ Mermaid ERD (conceptual):
 ├── Dockerfile
 ├── instance
 │   └── data.db
+├── logging_setup.py
+├── metrics.py
 ├── migrations
 │   ├── alembic.ini
 │   ├── env.py
@@ -340,6 +353,14 @@ Mermaid ERD (conceptual):
 │   ├── store.py
 │   ├── tag.py
 │   └── user.py
+├── observability
+│   ├── alertmanager
+│   │   ├── alertmanager.yml
+│   │   └── alertmanager.yml.example
+│   └── prometheus
+│       ├── alerts.yml
+│       └── prometheus.yml
+├── proposals
 ├── README.md
 ├── requirements.txt
 ├── resources
@@ -352,5 +373,6 @@ Mermaid ERD (conceptual):
 └── screenshots
     ├── api_down_alert_email.png
     ├── db_down_alert_email.png
-    └── retail_api_erd.png
+    ├── retail_api_erd.png
+    └── swagger-ui.png
 ```
