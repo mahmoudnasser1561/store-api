@@ -163,7 +163,7 @@ curl "http://localhost:9090/api/v1/query?query=pg_up{job=\"store-db\"}"
 
 Expected:
 
-- `store-prometheus` and `store-grafana` are `Up`
+- `store-prometheus`, `store-grafana`, `store-alertmanager`, and `store-postgres-exporter` are `Up`
 - Prometheus targets API shows `store-api:5000` with `"health":"up"`
 - Query result includes `up{job="store-api"} == 1`
 - `up{job="store-db"} == 1` means postgres-exporter is reachable
@@ -260,7 +260,7 @@ Mermaid ERD (conceptual):
 
 - Tag an item (POST /item/{item_id}/tag/{tag_id})
 
-- Swagger is the source of truth for request/response bodies.
+- Swagger is the source of truth for API contract (request/response schema), while runtime health is validated through logs, metrics, and alerts.
 
 ##  Main Endpoints (Highlights)
 
@@ -355,7 +355,6 @@ Mermaid ERD (conceptual):
 │   └── user.py
 ├── observability
 │   ├── alertmanager
-│   │   ├── alertmanager.yml
 │   │   └── alertmanager.yml.example
 │   └── prometheus
 │       ├── alerts.yml
