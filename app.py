@@ -5,10 +5,11 @@ import time
 from threading import Lock
 from uuid import uuid4
 
-from flask import Flask, g, jsonify, request
+from flask import Flask, Response, g, jsonify, request
 from flask_smorest import Api
 
 from flask_migrate import Migrate
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from resources.item import blp as ItemBlueprint
 from resources.store import blp as StoreBlueprint
 from resources.tag import blp as TagBlueprint
@@ -24,6 +25,14 @@ from flask.signals import got_request_exception
 from sqlalchemy import text
 
 from logging_setup import setup_logging
+from metrics import (
+    HTTP_REQUEST_DURATION_SECONDS,
+    HTTP_REQUESTS_ERRORS_TOTAL,
+    HTTP_REQUESTS_IN_FLIGHT,
+    HTTP_REQUESTS_TOTAL,
+    configure_service_metrics,
+    service_name,
+)
 
 load_dotenv()  
 
@@ -39,6 +48,7 @@ secret_key = os.getenv("SECRET_KEY")
 
 def create_app(db_url=None):
     setup_logging()
+    configure_service_metrics()
     app = Flask(__name__)
     # app.config['SQLALCHEMY_DATABASE_URI'] = (
     #     f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
@@ -71,10 +81,18 @@ def create_app(db_url=None):
     def set_request_context():
         g.request_id = request.headers.get("X-Request-ID") or str(uuid4())
         g.request_start = time.perf_counter()
+        route_template = request.url_rule.rule if request.url_rule else "NOT_FOUND"
+        g.metrics_route = route_template
+        g.metrics_method = request.method
+        HTTP_REQUESTS_IN_FLIGHT.labels(
+            service=service_name(),
+            method=request.method,
+            route=route_template,
+        ).inc()
 
     @app.before_request
     def create_tables_once():
-        if request.endpoint in {"healthz", "readyz"}:
+        if request.endpoint in {"healthz", "readyz", "metrics"}:
             return
         if request.url_rule is None:
             return
@@ -89,9 +107,43 @@ def create_app(db_url=None):
 
     @app.after_request
     def log_request(response):
+        route_template = getattr(
+            g,
+            "metrics_route",
+            request.url_rule.rule if request.url_rule else "NOT_FOUND",
+        )
+        method = getattr(g, "metrics_method", request.method)
+        status_code = str(response.status_code)
+
+        HTTP_REQUESTS_IN_FLIGHT.labels(
+            service=service_name(),
+            method=method,
+            route=route_template,
+        ).dec()
+        HTTP_REQUESTS_TOTAL.labels(
+            service=service_name(),
+            method=method,
+            route=route_template,
+            status_code=status_code,
+        ).inc()
+        if status_code.startswith(("4", "5")):
+            HTTP_REQUESTS_ERRORS_TOTAL.labels(
+                service=service_name(),
+                method=method,
+                route=route_template,
+                status_code=status_code,
+            ).inc()
+
         duration_ms = None
+        duration_seconds = None
         if hasattr(g, "request_start"):
-            duration_ms = round((time.perf_counter() - g.request_start) * 1000, 2)
+            duration_seconds = max(time.perf_counter() - g.request_start, 0)
+            duration_ms = round(duration_seconds * 1000, 2)
+            HTTP_REQUEST_DURATION_SECONDS.labels(
+                service=service_name(),
+                method=method,
+                route=route_template,
+            ).observe(duration_seconds)
 
         try:
             user_id = get_jwt_identity()
@@ -151,6 +203,10 @@ def create_app(db_url=None):
         except Exception:
             db.session.rollback()
             return jsonify({"status": "not_ready"}), 503
+
+    @app.get("/metrics")
+    def metrics():
+        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
     def create_defaults():
         pass
