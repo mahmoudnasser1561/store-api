@@ -165,12 +165,43 @@ Mermaid ERD (conceptual):
 - DELETE /user/{user_id}
 
 ## Project Structure
+```
 .
-├── app.py               # App factory + config + blueprint registration
-├── resources/           # Flask-Smorest blueprints (routes)
-├── models/              # SQLAlchemy models
-├── schemas.py           # Request/response schemas
-├── migrations/          # Alembic migrations
-├── db/                  # Postgres init script + Dockerfile
-├── docker-compose.yaml  # Local stack
-└── Dockerfile           # API container
+├── app.py
+├── blocklist.py
+├── db
+│   ├── Dockerfile
+│   └── init.sql
+├── db.py
+├── docker-compose.yaml
+├── Dockerfile
+├── instance
+│   └── data.db
+├── migrations
+│   ├── alembic.ini
+│   ├── env.py
+│   ├── README
+│   ├── script.py.mako
+│   └── versions
+│       └── cc639f0807ff_.py
+├── models
+│   ├── __init__.py
+│   ├── item.py
+│   ├── item_tags.py
+│   ├── store.py
+│   ├── tag.py
+│   └── user.py
+├── README.md
+├── requirements.txt
+├── resources
+│   ├── __init__.py
+│   ├── item.py
+│   ├── store.py
+│   ├── tag.py
+│   └── user.py
+├── schemas.py
+└── screenshots
+    └── store_api.drawio.png
+
+7 directories, 28 files
+```
