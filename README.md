@@ -141,6 +141,87 @@ curl -X GET 'http://localhost:5000/store/search?name=m'
 curl http://localhost:5000/metrics | grep -E 'stores_created_total|store_search_total|http_requests_total|http_request_duration_seconds'
 ```
 
+Run Prometheus + Grafana using compose profile:
+
+```bash
+docker compose --profile observability up -d
+```
+
+- Prometheus UI: `http://localhost:9090`
+- Grafana UI: `http://localhost:3000` (default `admin/admin`, override with `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`)
+- Alertmanager UI: `http://localhost:9093`
+
+Observability verification:
+
+```bash
+docker compose --profile observability ps
+curl http://localhost:9090/api/v1/targets
+curl "http://localhost:9090/api/v1/query?query=up{job=\"store-api\"}"
+```
+
+Expected:
+
+- `store-prometheus` and `store-grafana` are `Up`
+- Prometheus targets API shows `store-api:5000` with `"health":"up"`
+- Query result includes `up{job="store-api"} == 1`
+
+Alerting setup (email routing):
+
+- `StoreApiDown` alert routes to your API-alert recipient email
+- `StoreDbDown` alert routes to your DB-alert recipient email
+
+Create a local (git-ignored) Alertmanager config from the example:
+
+```bash
+cp observability/alertmanager/alertmanager.yml.example observability/alertmanager/alertmanager.yml
+```
+
+Then edit `observability/alertmanager/alertmanager.yml` with your private values:
+
+```env
+smtp_smarthost: "smtp.gmail.com:587"
+smtp_from: "email@gmail.com"
+smtp_auth_username: "email@gmail.com"
+smtp_auth_password: "16_char_gmail_app_password"
+```
+
+Notes:
+
+- Use a Gmail App Password (2FA must be enabled)
+- `observability/alertmanager/alertmanager.yml` is git-ignored by default
+
+Alert verification:
+
+```bash
+docker compose --profile observability up -d
+curl http://localhost:9090/api/v1/rules
+curl http://localhost:9090/api/v1/alerts
+curl http://localhost:9093/api/v2/status
+```
+
+Simulate alerts:
+
+```bash
+# Trigger StoreApiDown (wait >1 minute)
+docker compose stop api
+
+# Trigger StoreDbDown (wait >1 minute)
+docker compose stop db
+
+# Recover services
+docker compose start api db
+```
+
+## Verification Screenshots
+
+Store API down alert email:
+
+[![Store API Down Alert Email](screenshots/api_down_alert_email.png)](screenshots/api_down_alert_email.png)
+
+Store DB down alert email:
+
+[![Store DB Down Alert Email](screenshots/db_down_alert_email.png)](screenshots/db_down_alert_email.png)
+
 ## Domain Model (Conceptual)
 
 Store has many Items
@@ -151,7 +232,7 @@ Item ↔ Tag is many-to-many (junction table)
 
 Mermaid ERD (conceptual):
 <br> 
-[![store_api ERD](screenshots/store_api.drawio.png)](screenshots/store_api.drawio.png)
+[![Retail API ERD](screenshots/retail_api_erd.png)](screenshots/retail_api_erd.png)
 
 
 ## Example API Flow (using Swagger)
@@ -269,7 +350,7 @@ Mermaid ERD (conceptual):
 │   └── user.py
 ├── schemas.py
 └── screenshots
-    └── store_api.drawio.png
-
-7 directories, 28 files
+    ├── api_down_alert_email.png
+    ├── db_down_alert_email.png
+    └── retail_api_erd.png
 ```
