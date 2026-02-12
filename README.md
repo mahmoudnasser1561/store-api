@@ -229,9 +229,17 @@ Store API down alert email:
 
 [![Store API Down Alert Email](screenshots/api_down_alert_email.png)](screenshots/api_down_alert_email.png)
 
+Store API resolved alert email:
+
+[![Store API Resolved Alert Email](screenshots/api_resolved_alert_email.png)](screenshots/api_resolved_alert_email.png)
+
 Store DB down alert email:
 
 [![Store DB Down Alert Email](screenshots/db_down_alert_email.png)](screenshots/db_down_alert_email.png)
+
+Store DB resolved alert email:
+
+[![Store DB Resolved Alert Email](screenshots/db_resolved_alert_email.png)](screenshots/db_resolved_alert_email.png)
 
 ## Domain Model (Conceptual)
 
@@ -371,7 +379,9 @@ Mermaid ERD (conceptual):
 ├── schemas.py
 └── screenshots
     ├── api_down_alert_email.png
+    ├── api_resolved_alert_email.png
     ├── db_down_alert_email.png
+    ├── db_resolved_alert_email.png
     ├── retail_api_erd.png
     └── swagger-ui.png
 ```
