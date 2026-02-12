@@ -2,8 +2,6 @@
 
 A production-style REST API for managing **Stores**, **Items**, and **Tags** — with **JWT authentication**, **schema validation**, **migrations**, and **OpenAPI/Swagger docs**.
 
-> Built as a portfolio backend project to demonstrate real-world API design, entity relationships, and containerized local development.
-
 ---
 
 ## Features
