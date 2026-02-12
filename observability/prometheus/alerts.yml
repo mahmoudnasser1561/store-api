@@ -1,0 +1,22 @@
+groups:
+  - name: store-api-alerts
+    rules:
+      - alert: StoreApiDown
+        expr: up{job="store-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: store-api
+        annotations:
+          summary: "store-api is down"
+          description: "Prometheus cannot scrape store-api for more than 1 minute."
+
+      - alert: StoreDbDown
+        expr: pg_up{job="store-db"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: store-db
+        annotations:
+          summary: "store-db is down"
+          description: "Postgres exporter reports pg_up=0 for more than 1 minute."
