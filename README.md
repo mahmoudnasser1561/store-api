@@ -72,6 +72,74 @@ docker compose up --build
 
 Go to: ```http://localhost:5000/swagger-ui```
 
+## Logging (Structured JSON)
+
+The API writes one JSON log line per request to stdout (container-friendly), plus exception logs.
+
+- Request event: `event="http_request"`
+- Exception event: `event="http_exception"`
+- Correlation header: incoming `X-Request-ID` is accepted and echoed back in response headers
+- Sensitive data policy: request bodies, passwords, and tokens are not logged
+
+Key request fields in logs:
+
+- `ts`, `level`, `logger`, `event`
+- `request_id`, `method`, `route`, `path`, `status`
+- `duration_ms`, `remote_addr`, `user_id` (when JWT identity exists)
+
+Logging environment variables:
+
+- `LOG_FORMAT` (default: `json`)
+- `LOG_LEVEL` (default: `INFO`)
+- `WERKZEUG_LOG_LEVEL` (default: `WARNING`)
+- `PYTHONUNBUFFERED=1` (flush logs immediately in Docker)
+
+Quick verification:
+
+```bash
+curl -i -H 'X-Request-ID: demo-123' http://localhost:5000/healthz
+docker logs --tail 50 store-api
+```
+
+Expected:
+
+- Response contains header `X-Request-ID: demo-123`
+- Logs contain one JSON line with `event: "http_request"` and `request_id: "demo-123"`
+
+Example request log:
+
+```json
+{"ts":"2026-02-12T18:18:59.664Z","level":"INFO","logger":"app.request","event":"http_request","request_id":"prepush-123","method":"GET","route":"/store","path":"/store","status":200,"duration_ms":13.85,"remote_addr":"172.18.0.1","user_id":null}
+```
+
+Example exception log:
+
+```json
+{"ts":"2026-02-12T18:20:01.102Z","level":"ERROR","logger":"app.request","event":"http_exception","request_id":"demo-500","method":"GET","route":"/store","path":"/store","remote_addr":"172.18.0.1","user_id":null,"stacktrace":"Traceback (most recent call last): ..."}
+```
+
+## Metrics (Prometheus)
+
+- Metrics endpoint: `GET /metrics`
+- Local test: `curl http://localhost:5000/metrics | head`
+
+Prometheus scrape config example:
+
+```yaml
+scrape_configs:
+  - job_name: store-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['store-api:5000']
+```
+
+Quick verification:
+
+```bash
+curl -X POST http://localhost:5000/store -H 'Content-Type: application/json' -d '{"name":"m1"}'
+curl -X GET 'http://localhost:5000/store/search?name=m'
+curl http://localhost:5000/metrics | grep -E 'stores_created_total|store_search_total|http_requests_total|http_request_duration_seconds'
+```
 
 ## Domain Model (Conceptual)
 
