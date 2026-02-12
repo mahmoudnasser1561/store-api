@@ -2,6 +2,7 @@ import logging
 import os
 import secrets
 import time
+from threading import Lock
 from uuid import uuid4
 
 from flask import Flask, g, jsonify, request
@@ -20,6 +21,7 @@ from db import db
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, get_jwt_identity
 from flask.signals import got_request_exception
+from sqlalchemy import text
 
 from logging_setup import setup_logging
 
@@ -62,6 +64,8 @@ def create_app(db_url=None):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
     app.config["JWT_SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
+    tables_init_lock = Lock()
+    app.extensions["tables_initialized"] = False
 
     @app.before_request
     def set_request_context():
@@ -69,8 +73,19 @@ def create_app(db_url=None):
         g.request_start = time.perf_counter()
 
     @app.before_request
-    def create_tables():
-        db.create_all()
+    def create_tables_once():
+        if request.endpoint in {"healthz", "readyz"}:
+            return
+        if request.url_rule is None:
+            return
+        if app.extensions.get("tables_initialized"):
+            return
+
+        with tables_init_lock:
+            if app.extensions.get("tables_initialized"):
+                return
+            db.create_all()
+            app.extensions["tables_initialized"] = True
 
     @app.after_request
     def log_request(response):
@@ -123,6 +138,19 @@ def create_app(db_url=None):
         )
 
     got_request_exception.connect(log_exception, app, weak=False)
+
+    @app.get("/healthz")
+    def healthz():
+        return jsonify({"status": "ok"}), 200
+
+    @app.get("/readyz")
+    def readyz():
+        try:
+            db.session.execute(text("SELECT 1"))
+            return jsonify({"status": "ready"}), 200
+        except Exception:
+            db.session.rollback()
+            return jsonify({"status": "not_ready"}), 503
 
     def create_defaults():
         pass
