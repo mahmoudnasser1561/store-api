@@ -1,0 +1,37 @@
+global:
+  smtp_smarthost: "smtp.gmail.com:587"
+  smtp_from: "email@gmail.com"
+  smtp_auth_username: "email@gmail.com"
+  smtp_auth_password: "16_char_gmail_app_password"
+  smtp_require_tls: true
+
+route:
+  receiver: default-null
+  group_by: ["alertname", "service"]
+  group_wait: 15s
+  group_interval: 2m
+  repeat_interval: 4h
+  routes:
+    - matchers:
+        - alertname="StoreApiDown"
+      receiver: email-store-api
+    - matchers:
+        - alertname="StoreDbDown"
+      receiver: email-store-db
+
+receivers:
+  - name: default-null
+
+  - name: email-store-api
+    email_configs:
+      - to: "api-alert-recipient@example.com"
+        send_resolved: true
+        headers:
+          subject: "[store-api] StoreApiDown"
+
+  - name: email-store-db
+    email_configs:
+      - to: "db-alert-recipient@example.com"
+        send_resolved: true
+        headers:
+          subject: "[store-api] StoreDbDown"
