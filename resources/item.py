@@ -7,6 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from schemas import ItemSchema, ItemUpdateSchema
 from models import ItemModel, StoreModel
 from db import db
+from metrics import ITEMS_CREATED_TOTAL, service_name
 
 blp = Blueprint("Items", "items", description="Operations on items")
 
@@ -72,4 +73,5 @@ class ItemList(MethodView):
         except SQLAlchemyError:
             abort(500, "An Error happened while inserting the item.")
         
+        ITEMS_CREATED_TOTAL.labels(service=service_name()).inc()
         return item

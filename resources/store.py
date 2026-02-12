@@ -8,6 +8,13 @@ from flask_jwt_extended import jwt_required
 from schemas import StoreSchema, ItemSchema
 from models import StoreModel, ItemModel
 from db import db
+from metrics import (
+    STORE_ITEM_LINK_TOTAL,
+    STORE_ITEM_UNLINK_TOTAL,
+    STORE_SEARCH_TOTAL,
+    STORES_CREATED_TOTAL,
+    service_name,
+)
 
 
 blp = Blueprint("Stores", "stores", description="Operations on stores")
@@ -76,6 +83,7 @@ class StoreList(MethodView):
                 message="An Error happened while inserting the store."
                 )
 
+        STORES_CREATED_TOTAL.labels(service=service_name()).inc()
         return store
 
 
@@ -86,6 +94,7 @@ class StoreSearch(MethodView):
         name = request.args.get("name")
         if not name:
             abort(400, message="Provide ?name=<term>")
+        STORE_SEARCH_TOTAL.labels(service=service_name()).inc()
         return StoreModel.query.filter(StoreModel.name.ilike(f"%{name}%")).all()
     
 @blp.route("/store/<int:store_id>/count")
@@ -112,6 +121,7 @@ class StoreItem(MethodView):
         UNASSIGNED_ID = 0
         item.store_id = UNASSIGNED_ID
         db.session.commit()
+        STORE_ITEM_UNLINK_TOTAL.labels(service=service_name()).inc()
 
         return {"message": "Item moved to Unassigned store", "item": ItemSchema().dump(item)}
     
@@ -128,5 +138,6 @@ class StoreItem(MethodView):
         
         item.store_id = store_id
         db.session.commit()
+        STORE_ITEM_LINK_TOTAL.labels(service=service_name()).inc()
 
         return {"message": "Item linked to store", "item": ItemSchema().dump(item)}

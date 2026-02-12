@@ -7,6 +7,13 @@ from db import db
 from models import UserModel
 from schemas import UserSchema
 from blocklist import BLOCKLIST
+from metrics import (
+    LOGOUT_TOTAL,
+    TOKEN_REFRESH_TOTAL,
+    USER_LOGIN_TOTAL,
+    USERS_REGISTERED_TOTAL,
+    service_name,
+)
 
 blp = Blueprint("Users", "users", description="operations on users")
 
@@ -24,6 +31,7 @@ class UserRegister(MethodView):
 
         db.session.add(user)
         db.session.commit()
+        USERS_REGISTERED_TOTAL.labels(service=service_name()).inc()
 
         return {"message": "User created successfully."}, 201
 
@@ -39,6 +47,7 @@ class UserLogin(MethodView):
         if user and pbkdf2_sha256.verify(user_data["password"], user.password):
             access_token = create_access_token(identity=str(user.id), fresh=True)
             refresh_token = create_refresh_token(identity=str(user.id))
+            USER_LOGIN_TOTAL.labels(service=service_name()).inc()
             return {"access_token": access_token, "refresh_token": refresh_token}
         
         abort(401, message="Invalid credentials.")
@@ -51,6 +60,7 @@ class TokenRefresh(MethodView):
         new_token = create_access_token(identity=current_user, fresh=False)
         jti = get_jwt()["jti"]
         BLOCKLIST.add(jti)
+        TOKEN_REFRESH_TOTAL.labels(service=service_name()).inc()
         return {"access_token": new_token}
 
 @blp.route("/logout")
@@ -59,6 +69,7 @@ class UserLogout(MethodView):
     def post(self):
         jti = get_jwt()["jti"]
         BLOCKLIST.add(jti)
+        LOGOUT_TOTAL.labels(service=service_name()).inc()
         return {"message": "Successfully logged out."}
 
 @blp.route("/user/<int:user_id>")

@@ -6,6 +6,12 @@ from flask_jwt_extended import jwt_required
 from db import db
 from models import TagModel, StoreModel, ItemModel
 from schemas import TagSchema, TagAndItemSchema
+from metrics import (
+    ITEM_TAG_LINK_TOTAL,
+    ITEM_TAG_UNLINK_TOTAL,
+    TAGS_CREATED_TOTAL,
+    service_name,
+)
 
 blp = Blueprint("Tags", "tags", description="Operations on tags")
 
@@ -32,7 +38,7 @@ class TagsInStore(MethodView):
                 500,
                 message=str(e)
                 )
-            
+        TAGS_CREATED_TOTAL.labels(service=service_name()).inc()
         return tag
     
 @blp.route("/item/<string:item_id>/tag/<string:tag_id>")
@@ -51,6 +57,7 @@ class LinkTagsToItem(MethodView):
         except SQLAlchemyError:
             abort(500, message="An error occurred while inserting the tag.")
 
+        ITEM_TAG_LINK_TOTAL.labels(service=service_name()).inc()
         return tag
     
     jwt_required()
@@ -67,6 +74,7 @@ class LinkTagsToItem(MethodView):
         except SQLAlchemyError:
             abort(500, message="An error occurred while inserting the tag.")
 
+        ITEM_TAG_UNLINK_TOTAL.labels(service=service_name()).inc()
         return {"message": "Item removed from tag", "item": item, "tag": tag}
 
 
@@ -115,4 +123,5 @@ class Tag(MethodView):
         except SQLAlchemyError as e:
             abort(500, message=str(e))
 
+        TAGS_CREATED_TOTAL.labels(service=service_name()).inc()
         return tag
