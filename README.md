@@ -247,11 +247,6 @@ Store has many Tags
 
 Item ↔ Tag is many-to-many (junction table)
 
-Mermaid ERD (conceptual):
-<br> 
-[![Retail API ERD](screenshots/retail_api_erd.png)](screenshots/retail_api_erd.png)
-
-
 ## Example API Flow (using Swagger)
 
 - Register → Login (get access_token, refresh_token)
